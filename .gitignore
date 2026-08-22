@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+/build/
+/dist/
+/.tmp/
+.venv/
+venv/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Private or generated research artefacts
+/data/
+/datasets/
+/checkpoints/
+/weights/
+/runs/
+/results/
+/outputs/
+/wandb/
+/tensorboard/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.mat
+*.pkl
+*.pickle
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.zst
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key

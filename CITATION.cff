@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Stokes-Aware Mueller Generator"
+type: software
+version: 0.1.0
+date-released: 2026-08-22
+authors:
+  - family-names: "OULAD ALI"
+    given-names: "Ayoub"
+license: MIT
+abstract: >-
+  Reference implementation of Stokes-aware variational autoencoders,
+  Mueller-matrix physical utilities, latent-field generators and lightweight
+  downstream heads for polarimetric research.
