@@ -1,36 +1,166 @@
 # Stokes-Aware Mueller Generator (SAMG)
 
-SAMG is a research implementation for learning compact representations of
-Mueller matrices through their action on incident Stokes states. The central
-path is
+SAMG is a physics-aware generative framework for Mueller polarimetry. It learns
+a compact latent representation from measured Mueller matrices, predicts their
+action on incident Stokes states, and reconstructs the corresponding optical
+operator:
 
-\[
+$$
 (M, S_{\mathrm{in}}) \longrightarrow z \longrightarrow
 \widehat S_{\mathrm{out}} \longrightarrow \widehat M.
-\]
+$$
 
-The repository contains a clean, installable extraction of the architectures
-used in the accompanying research workspace. It intentionally excludes source
-datasets, patient or specimen identifiers, trained weights, caches and report
-build artefacts.
+> **Code-only research release.** This repository contains architectures,
+> physics operators, training code, tests and fixed scientific figures. It does
+> **not** contain trained weights, private datasets, patient identifiers, caches
+> or latent tensors.
 
-## What is included
+## What SAMG produces
+
+- compact latent maps for heterogeneous polarimetric sources;
+- Mueller reconstructions through decoded Stokes responses;
+- complete generated Mueller fields with 16 spatial coefficient maps;
+- explicit responses to user-specified incident Stokes states;
+- conditional field–mask pairs for data augmentation;
+- frozen or fine-tuned representations for segmentation and classification.
+
+## Main verified results
+
+The values below come from fixed archived campaigns. Rows correspond to
+different tasks and should not be read as a cross-task leaderboard.
+
+| Evaluation | Protocol | Result |
+|---|---|---|
+| Matched SAMG vs direct VAE | 4,384 matrices, 54 biological units, 5 matched seeds | Cloude-PSD fraction: **52.65 ± 2.51%** for SAMG vs **34.13 ± 1.79%** for the direct VAE (**+18.52 points**). Normalized MSE: 0.4056 ± 0.0256 vs 0.3975 ± 0.0289. |
+| Complete generated fields | Every pixel of 16–32 archived samples per family; strict criterion $\lambda_{\min}(H) \geq 0.005$ | **96.22%** PixelCNN, **100.00%** PixelRNN, **99.999%** latent VDM and **99.96%** Flow Matching. The autoregressive and continuous families use different corpora and resolutions, so these rates are descriptive rather than a ranking. |
+| ColoPola augmentation at 5% labels | Root-grouped test split, 46 roots / 113 acquisitions, 30 paired seeds | AUC **0.847 ± 0.103** with Flow Matching augmentation vs **0.840 ± 0.115** without augmentation. |
+| Cervical multiclass segmentation | 43 training and 11 internal-validation acquisitions, 3 retained seeds | Patient-mean macro-Dice excluding background: **0.6076** with Flow Matching augmentation vs **0.5977** with real data only (**+0.99 point**). |
+
+<p align="center">
+  <img src="docs/assets/wm2_matched_results.png" width="950" alt="Matched SAMG and direct VAE training curves with held-out fidelity and Cloude-PSD contrasts">
+</p>
+
+The matched experiment uses the same data, latent dimension, optimization
+budget and seeds for SAMG and the direct VAE. Fidelity and physical
+admissibility are reported together because neither metric substitutes for the
+other.
+
+## Selected model outputs
+
+### Five-source corpus summary
+
+<p align="center">
+  <img src="docs/assets/corpus_summary.png" width="950" alt="Aggregate Mueller signatures and sample counts for ColoPola, Eye Arizona, MAP-ORG, PoLamb and SFD">
+</p>
+
+The five sources contain different numbers of biological units, acquisitions
+and spectral conditions. The displayed matrices are aggregate absolute Mueller
+signatures, not individual images.
+
+### Spatial structure of the unified latent field
+
+<p align="center">
+  <img src="docs/assets/latent_field_statistics.png" width="950" alt="Spatial autocorrelation, channel marginal statistics and variogram of the eight-channel SAMG latent field">
+</p>
+
+The eight latent channels remain spatially correlated, have different
+marginal scales and exhibit a growing variogram. These measured properties
+motivate spatial generators instead of independent latent-pixel sampling.
+
+### Operator reconstruction at one held-out location
+
+<p align="center">
+  <img src="docs/assets/matrix_reconstruction_example.png" width="950" alt="One target Mueller matrix with direct VAE, Stokes-ridge and post-hoc PSD reconstructions, errors and Cloude spectra">
+</p>
+
+The target, predictions, matrix errors and Cloude spectra are shown together.
+The post-hoc PSD arm illustrates the fidelity–admissibility trade-off without
+changing the trained direct VAE.
+
+### Spatial signatures of the four generators
+
+<p align="center">
+  <img src="docs/assets/generative_comparison.png" width="950" alt="Synthetic depolarization, diattenuation and polarizance fields from PixelCNN, PixelRNN, latent VDM and Flow Matching">
+</p>
+
+Each physical quantity uses one common scale across the four methods. PixelCNN
+and PixelRNN produce 32×32 fields, whereas latent VDM and Flow Matching produce
+128×128 fields from a separate campaign; the panel compares generated
+signatures rather than ranking methods.
+
+### Complete Mueller-field generation
+
+<p align="center">
+  <img src="docs/assets/generated_mueller_fields.png" width="850" alt="Complete sixteen-channel Mueller fields generated by PixelCNN, PixelRNN, latent VDM and Flow Matching">
+</p>
+
+Each block is one fully generated Mueller field normalized by $M_{00}$. The 16
+coefficient maps are decoded with the same physical convention used during
+evaluation.
+
+### Stokes interrogation of a generated operator
+
+<p align="center">
+  <img src="docs/assets/stokes_interrogation.png" width="950" alt="Generated local Mueller matrix, four incident Stokes states and their four emerging Stokes responses">
+</p>
+
+This is the central interface exposed by SAMG: a generated local operator is
+queried with four admissible incident states and returns the corresponding
+emerging states. The displayed responses are obtained by the deterministic
+product $S_{\mathrm{out}} = M S_{\mathrm{in}}$.
+
+### Synthetic cervical field–mask pair
+
+<table>
+  <tr>
+    <th>Generated depolarization channel</th>
+    <th>Generated multiclass mask</th>
+  </tr>
+  <tr>
+    <td><img src="docs/assets/synthetic_cervix_field.png" width="360" alt="Synthetic cervical depolarization field generated by mask-conditioned Flow Matching"></td>
+    <td><img src="docs/assets/synthetic_cervix_mask.png" width="360" alt="Synthetic multiclass cervical mask paired with the generated field"></td>
+  </tr>
+</table>
+
+The pair is produced by mask-conditioned Flow Matching using training data
+only. Its decoded pseudo-Mueller field is projected with a Cloude margin of
+0.005 and normalized to $M_{00}=1$.
+
+### Data augmentation across label budgets
+
+<p align="center">
+  <img src="docs/assets/colopola_flow_augmentation.png" width="850" alt="ColoPola AUC with and without Flow Matching augmentation at 5, 25, 50 and 100 percent labelled roots">
+</p>
+
+The classifier, optimization budget and grouped split are identical in both
+arms; only the generated augmentation changes. The 1% regime is intentionally
+not included because too few labelled roots make it qualitatively different
+from the remaining budgets.
+
+Human-image reconstruction and cervical segmentation plates are intentionally
+not redistributed here while the source-dataset permissions are being checked.
+The numerical aggregate results remain reported above; no individual image or
+identifier is required to obtain them.
+
+Machine-readable values are provided in
+[`docs/results/selected_results.json`](docs/results/selected_results.json), and
+the figure inventory is documented in
+[`docs/assets/README.md`](docs/assets/README.md).
+
+## Included architectures
 
 - `ConditionalCNNPIVAE` and `FourIncidentPIVAE`: the historical
   Stokes-conditioned SAMG architecture;
-- `OperatorPIVAE`: a per-observation tetrahedral-bank variant whose encoder is
-  independent of the incident probe;
-- `DirectMuellerVAE`: the direct sixteen-coefficient VAE baseline;
-- differentiable Stokes application, ridge reconstruction and Cloude
-  transforms, metrics and PSD projection;
+- `OperatorPIVAE`: a tetrahedral-bank variant whose encoder is independent of
+  the incident probe;
+- `DirectMuellerVAE`: the direct 16-coefficient VAE baseline;
 - PixelCNN, PixelRNN, latent VDM and Flow Matching priors for spatial latent
   fields;
 - lightweight shared heads for segmentation and classification;
-- a train-only/validation-only training command, a separate evaluation
-  command and a fully synthetic smoke dataset;
-- unit tests and release-safety checks suitable for continuous integration.
+- differentiable Stokes application, ridge reconstruction, Cloude transforms,
+  strict-PSD metrics and PSD projection.
 
-No Cloude-Cholesky architecture is included: the public comparison here is
+No Cloude-Cholesky architecture is included. The public comparison is
 deliberately restricted to SAMG and its direct VAE baseline.
 
 ## Architecture
@@ -39,7 +169,7 @@ deliberately restricted to SAMG and its direct VAE baseline.
 flowchart LR
     M[Mueller patch and centre] --> E[Conditional CNN encoder]
     C[Position and spectral value] --> E
-    B[Valid incident Stokes bank] --> E
+    B[Incident Stokes bank] --> E
     E --> Z[Latent z]
     Z --> D[Stokes decoder]
     B --> D
@@ -52,10 +182,10 @@ flowchart LR
     Z -. frozen representation .-> T[Segmentation or classification head]
 ```
 
-The model exposes three distinct objects: latent coordinates `z`, decoded
-Stokes actions and the Mueller operator fitted from those actions. Validity of
-the finite decoded rays does not by itself imply global Cloude-PSD
-realizability, so the two properties are evaluated separately.
+The implementation distinguishes latent coordinates `z`, decoded Stokes
+actions and the Mueller operator fitted from those actions. Validity of a
+finite set of decoded rays does not by itself imply global Cloude-PSD
+realizability, so both properties are evaluated separately.
 
 ## Installation
 
@@ -112,20 +242,10 @@ with torch.no_grad():
 print(samg_output["m_hat"].shape, direct_output["m_hat"].shape)
 ```
 
-## Reproducibility contract
+## Training a spatial prior
 
-The training command never opens a test split. Model selection uses validation
-data only; test evaluation is an explicit, separate command. Biological-unit
-identifiers must be disjoint across splits and normalization statistics must be
-fitted on training data only. See [the data contract](docs/data.md) and
-[the reproducibility guide](docs/reproducibility.md).
-
-Existing private research checkpoints require the exact matching class and
-preprocessing convention; see [the compatibility note](docs/compatibility.md).
-
-Latent-field priors use their own leakage-safe split contract. Once train and
-validation latent tensors have been exported, a family can be trained and
-sampled with:
+Once leakage-safe train and validation latent tensors have been exported, a
+generator can be trained and sampled with:
 
 ```bash
 samg-train-generator --family flow --train data/latent_train.pt \
@@ -134,9 +254,19 @@ samg-sample-generator --checkpoint runs/flow/best.pt \
   --output outputs/flow_samples.pt --count 16
 ```
 
+## Reproducibility and data contract
+
+The training command never opens a test split. Model selection uses validation
+data only; test evaluation is a separate command. Biological-unit identifiers
+must be disjoint across splits, and normalization statistics must be fitted on
+training data only. See [the data contract](docs/data.md) and
+[the reproducibility guide](docs/reproducibility.md).
+
 The synthetic example verifies software execution, not scientific performance.
-Numerical claims require the original non-redistributable datasets and the
-corresponding frozen protocol.
+Reproducing the reported numerical values requires access to the original
+non-redistributable datasets and separately licensed checkpoints. Existing
+private checkpoints require the exact matching class and preprocessing
+convention described in [the compatibility note](docs/compatibility.md).
 
 ## Project status
 
@@ -146,6 +276,6 @@ assumptions and limitations.
 
 ## Citation and licence
 
-Citation metadata are provided in [`CITATION.cff`](CITATION.cff). The code is
-released under the MIT licence. Dataset and checkpoint licences are separate
-and are not granted by this repository.
+Citation metadata are provided in [`CITATION.cff`](CITATION.cff). The source
+code is released under the MIT licence. Dataset, measured-image and checkpoint
+licences remain separate and are not granted by this repository.

@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "matched_reconstruction": {
+    "status": "held-out internal evaluation; single archived opening",
+    "matrices": 4384,
+    "biological_units": 54,
+    "seeds": 5,
+    "samg": {
+      "normalized_mse_mean": 0.4055518508,
+      "normalized_mse_sd": 0.0256093666,
+      "cloude_psd_fraction_mean": 0.5265170932,
+      "cloude_psd_fraction_sd": 0.0251004733
+    },
+    "direct_vae": {
+      "normalized_mse_mean": 0.3974955678,
+      "normalized_mse_sd": 0.0289482642,
+      "cloude_psd_fraction_mean": 0.3413177133,
+      "cloude_psd_fraction_sd": 0.0179059394
+    }
+  },
+  "generated_fields": {
+    "criterion": "minimum Cloude eigenvalue >= 0.005",
+    "scope": "all pixels from every archived sample listed below",
+    "families": [
+      {
+        "name": "PixelCNN",
+        "samples": 16,
+        "resolution": "32x32",
+        "pixels": 16384,
+        "strict_psd_fraction": 0.962219
+      },
+      {
+        "name": "PixelRNN",
+        "samples": 16,
+        "resolution": "32x32",
+        "pixels": 16384,
+        "strict_psd_fraction": 1.0
+      },
+      {
+        "name": "latent VDM",
+        "samples": 32,
+        "resolution": "128x128",
+        "pixels": 524288,
+        "strict_psd_fraction": 0.999992
+      },
+      {
+        "name": "Flow Matching",
+        "samples": 16,
+        "resolution": "128x128",
+        "pixels": 262144,
+        "strict_psd_fraction": 0.99955
+      }
+    ]
+  },
+  "colopola_flow_augmentation": {
+    "status": "held-out evaluation grouped by root",
+    "test_roots": 46,
+    "test_acquisitions": 113,
+    "paired_seeds": 30,
+    "metric": "AUC",
+    "regimes": [
+      {
+        "label_fraction": 0.05,
+        "without_augmentation_mean": 0.840411,
+        "without_augmentation_sd": 0.114942,
+        "flow_matching_mean": 0.847115,
+        "flow_matching_sd": 0.103047,
+        "paired_gain": 0.006704,
+        "paired_gain_sd": 0.027817
+      },
+      {
+        "label_fraction": 0.25,
+        "without_augmentation_mean": 0.923087,
+        "without_augmentation_sd": 0.026727,
+        "flow_matching_mean": 0.929067,
+        "flow_matching_sd": 0.028291,
+        "paired_gain": 0.005979,
+        "paired_gain_sd": 0.015003
+      },
+      {
+        "label_fraction": 0.5,
+        "without_augmentation_mean": 0.919583,
+        "without_augmentation_sd": 0.01934,
+        "flow_matching_mean": 0.924585,
+        "flow_matching_sd": 0.021071,
+        "paired_gain": 0.005002,
+        "paired_gain_sd": 0.013052
+      },
+      {
+        "label_fraction": 1.0,
+        "without_augmentation_mean": 0.918474,
+        "without_augmentation_sd": 0.007724,
+        "flow_matching_mean": 0.925394,
+        "flow_matching_sd": 0.011462,
+        "paired_gain": 0.00692,
+        "paired_gain_sd": 0.011171
+      }
+    ]
+  },
+  "cervix_segmentation": {
+    "status": "internal validation",
+    "training_acquisitions": 43,
+    "validation_acquisitions": 11,
+    "retained_seeds": 3,
+    "metric": "patient-mean macro-Dice excluding background",
+    "real_only_samg": 0.5977346154,
+    "flow_augmented_samg": 0.6075854935,
+    "difference": 0.0098508781
+  }
+}
